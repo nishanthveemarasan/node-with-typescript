@@ -25,21 +25,27 @@ class AuthController{
 
     static login = async (req: Request, res: Response) =>{
         try{
-            const {token, refreshToken} = await prisma.$transaction(async (prisma) => {
+            const response:{token?: string, refreshToken?: string, error: boolean} = await prisma.$transaction(async (prisma) => {
                 const { username, password } = req.body;
                 const user = await UserModel.findByEmail(username);
                 if(!user){
-                    return res.status(500).json({ message: "Invalid credentials!" });
+                    return {
+                    error: true};
                 }
                 const isPasswordValid: boolean = await bcrypt.compare(password, user.password);
                 if(!isPasswordValid){
-                    return res.status(500).json({ message: "Invalid credentials!" });
+                 return {
+                    error: true};
+                    // return res.status(500).json({ message: "Invalid credentials!" });
                 }
                 const token = generateAccessToken({ userId: user.id, email: user.email });
                 const refreshToken = await generateRefreshToken(user.id);
-                return { token, refreshToken };
+                return { token, refreshToken, error: false };
             });
-            return res.status(200).json({ token, refreshToken });
+            if(response.error){
+                return res.status(500).json({ message: "Invalid credentials!" });
+            }
+            return res.status(200).json({ token: response.token, refreshToken: response.refreshToken });
         }catch(error){
             console.error("Error logging in user:", error);
             return res.status(500).json({ message: "Something went wrong!" });
