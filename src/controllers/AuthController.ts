@@ -30,13 +30,14 @@ class AuthController{
                 const user = await UserModel.findByEmail(username);
                 if(!user){
                     return {
-                    error: true};
+                        error: true
+                    };
                 }
                 const isPasswordValid: boolean = await bcrypt.compare(password, user.password);
                 if(!isPasswordValid){
                  return {
-                    error: true};
-                    // return res.status(500).json({ message: "Invalid credentials!" });
+                        error: true
+                    };
                 }
                 const token = generateAccessToken({ userId: user.id, email: user.email });
                 const refreshToken = await generateRefreshToken(user.id);
