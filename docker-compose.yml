@@ -1,0 +1,75 @@
+version: '3.8'
+services:
+  node_type_backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: node_type_backend
+    container_name: node_type_backend
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "127.0.0.1:${APP_PORT:-3800}:3000"
+    volumes:
+      - ./:/usr/src/app
+    networks:
+      - app-network
+      - shared-network # Connect to shared-network for external communication
+  mongodb_node:
+    image: mongo:7
+    container_name: mongodb_node
+    restart: unless-stopped
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        cp /etc/mongodb.key /tmp/mongodb.key
+        chmod 400 /tmp/mongodb.key
+        chown 999:999 /tmp/mongodb.key
+        exec mongod --replSet rs0 --bind_ip_all --keyFile /tmp/mongodb.key
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_data_type:/data/db
+      - ./mongodb.key:/etc/mongodb.key
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+      - MONGO_INITDB_DATABASE=app_dbs
+    healthcheck:
+      test: |
+        mongosh --quiet --username root --password secret --authenticationDatabase admin --eval '
+        try {
+          rs.status().ok
+        } catch (e) {
+          rs.initiate({
+            _id: "rs0",
+            members: [{ _id: 0, host: "mongodb_node:27017" }]
+          }).ok
+        }'
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - app-network
+  mongo_express:
+    image: mongo-express:1
+    container_name: mongo_express
+    restart: unless-stopped
+    ports:
+      - "8082:8081"
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://root:secret@mongodb_node:27017/admin?replicaSet=rs0&authSource=admin
+      ME_CONFIG_BASICAUTH: "false"
+    depends_on:
+      - mongodb_node
+    networks:
+      - app-network
+volumes:
+  mongo_data_type:
+networks:
+  app-network:
+    driver: bridge # Internal network for communication within the Docker Compose project
+  shared-network:
+    external: true # External network to communicate with services outside the Docker Compose project

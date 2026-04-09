@@ -1,0 +1,35 @@
+{
+  "name": "nodejs-with-typescript",
+  "version": "1.0.0",
+  "description": "",
+  "homepage": "https://github.com/nishanthveemarasan/node-with-typescript#readme",
+  "bugs": {
+    "url": "https://github.com/nishanthveemarasan/node-with-typescript/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nishanthveemarasan/node-with-typescript.git"
+  },
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon --exec ts-node src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.7.0",
+    "@prisma/client": "6.19",
+    "dotenv": "^17.4.1",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.2",
+    "nodemon": "^3.1.14",
+    "prisma": "6.19",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.2"
+  }
+}

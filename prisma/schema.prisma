@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+}
+
+model User {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  email         String   @unique
+  password      String?  @unique
+  products      Product[]
+  orders        Order[]   
+  addresses     Address[]
+  refreshTokens refreshToken[]
+}
+
+model Product {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  price       Float
+  description String
+  userId      String @db.ObjectId
+  user        User    @relation(fields: [userId], references: [id])
+  file        File?
+  orderItems  OrderItem[]
+}
+
+model File {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  productId   String @unique @db.ObjectId
+  url         String
+  product     Product  @relation(fields: [productId], references: [id])
+}
+
+model OrderItem {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  orderId   String   @db.ObjectId
+  order     Order    @relation(fields: [orderId], references: [id])
+  productId String   @db.ObjectId
+  qty       Int
+  product   Product  @relation(fields: [productId], references: [id])
+  @@unique([orderId, productId])
+}
+
+model Session {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  sid       String   @unique
+  data      String  
+  expiresAt DateTime
+}
+
+model Order{
+  id              String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String          @db.ObjectId
+  user            User            @relation(fields: [userId], references: [id])
+  addressId       String?          @db.ObjectId
+  address         Address?          @relation(fields: [addressId], references: [id])
+  totalAmount     Float
+  currentStatus   OrderTrackStatus @default(CREATED)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  items           OrderItem[]
+  statusHistory   OrderStatus[]
+}
+
+model OrderStatus{
+  id        String           @id @default(auto()) @map("_id") @db.ObjectId
+  status    OrderTrackStatus @default(CREATED)
+  orderId   String           @db.ObjectId
+  order     Order            @relation(fields: [orderId], references: [id])
+  createdAt DateTime         @default(now())
+}
+
+model Address {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  lineOne   String
+  lineTwo   String?
+  city      String
+  zipCode   String
+  country   String
+  phone     String
+  isDefault Boolean  @default(false)
+  orders    Order[]
+}
+
+model refreshToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  token     String   @unique
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+enum OrderTrackStatus{
+  CREATED
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  ORDER_PLACED
+  ORDER_DISPATCHED
+  ORDER_SHIPPED
+  ORDER_DELIVERED
+}
