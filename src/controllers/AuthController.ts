@@ -1,15 +1,19 @@
 import type { Request, Response } from 'express';
-import bcrypt from "bcryptjs";
 import UserModel from '../models/userModel.ts';
 import prisma from '../utils/prisma-client.ts';
-import { generateAccessToken, generateRefreshToken } from '../utils/auth-helper.ts';
+import { generateAccessToken, generateRefreshToken, hashUserPassword, verifyPassword } from '../utils/auth-helper.ts';
 import RefreshTokenModel from '../models/refreshTokenModel.ts';
-import type { IRefreshToken } from '../types/models.ts';
+import type { IRefreshToken, IUser } from '../types/models.ts';
 
+type ILoginResponse = {
+    token: string|null;
+    refreshToken: string|null;
+    error: boolean;
+}
 class AuthController{
     static register = async (req: Request, res: Response) =>{
         const { name, email, password } = req.body;
-        const hashPassword = await bcrypt.hash(password, 12);
+        const hashPassword = await hashUserPassword(password);
 
         const user = new UserModel(name, email, hashPassword);
         try{
@@ -25,23 +29,31 @@ class AuthController{
 
     static login = async (req: Request, res: Response) =>{
         try{
-            const response:{token?: string, refreshToken?: string, error: boolean} = await prisma.$transaction(async (prisma) => {
+            const response:ILoginResponse = await prisma.$transaction(async (prisma) => {
                 const { username, password } = req.body;
-                const user = await UserModel.findByEmail(username);
-                if(!user){
-                    return {
-                        error: true
-                    };
+                let result:ILoginResponse = {
+                    error: false,
+                    token: null,
+                    refreshToken: null,
                 }
-                const isPasswordValid: boolean = await bcrypt.compare(password, user.password);
+                const user: IUser | null = await UserModel.findByEmail(username);
+                if(!user){
+                    result.error = true;
+                    return result;
+                }
+                const isPasswordValid: boolean = await verifyPassword(password, user.password);
                 if(!isPasswordValid){
-                 return {
-                        error: true
-                    };
+                    result.error = true;
+                    return result;
                 }
                 const token = generateAccessToken({ userId: user.id, email: user.email });
                 const refreshToken = await generateRefreshToken(user.id);
-                return { token, refreshToken, error: false };
+                result = {
+                    ...result,
+                    token,
+                    refreshToken,
+                }
+                return result;
             });
             if(response.error){
                 return res.status(500).json({ message: "Invalid credentials!" });
@@ -56,8 +68,14 @@ class AuthController{
     static refreshToken = async (req: Request, res: Response) =>{
         try{
             const { refreshToken } = req.body;
-            const token: IRefreshToken = await RefreshTokenModel.findByToken(refreshToken);
-            const user = await UserModel.findById(token.userId);
+            const token: IRefreshToken|null = await RefreshTokenModel.findByToken(refreshToken);
+            if(!token){
+                return res.status(422).json({ message: "Invalid refresh token" });
+            }
+            const user: IUser | null = await UserModel.findById(token.userId);
+            if(!user){
+                return res.status(401).json({ message: "Invalid request!" });
+            }
             const newRefreshToken = await generateRefreshToken(user.id, refreshToken);
             const newAccessToken = generateAccessToken({ userId: user.id, email: user.email });
             return res.status(200).json({ token: newAccessToken, refreshToken: newRefreshToken });

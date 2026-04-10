@@ -1,5 +1,4 @@
 import { body } from "express-validator";
-import type { Request } from "express";
 import UserModel from "../models/userModel.ts";
 import RefreshTokenModel from "../models/refreshTokenModel.ts";
 export const RegisterInputValidator = [
@@ -10,7 +9,7 @@ export const RegisterInputValidator = [
         .custom(async (value: string) => {
             const user = await UserModel.findByEmail(value);
             if(user){
-                throw Promise.reject("Email already in use!");
+                throw new Error("Email already in use!");
             }
             return true;
         }),
@@ -20,7 +19,7 @@ export const RegisterInputValidator = [
         .matches(/\d/)
         .matches(/[A-Z]/)
         .matches(/[a-z]/)
-        .custom((value: string, {req}: {req: Request}) => {
+        .custom((value: string, {req}) => {
             if(value !== req.body.password_confirmation){
                 throw new Error("Password and Confirm Password must be same!");
             }
@@ -40,10 +39,4 @@ export const LoginValidator = [
 export const refreshTokenValidator = [
     body("refreshToken", "Refresh token is required")
           .notEmpty()
-          .custom(async(value, { req }) => {
-            const activeToken = await RefreshTokenModel.findByToken(value);
-            if(!activeToken){
-                return Promise.reject('Invalid refresh token');
-            }
-          })
   ];

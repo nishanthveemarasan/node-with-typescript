@@ -1,6 +1,10 @@
-import { v4 as uuidv4 } from "uuid";
 import prisma from "../utils/prisma-client.ts";
-
+import { generateRefreshTokenString } from "../utils/auth-helper.ts";
+import { IRefreshToken } from "../types/models.ts";
+interface IRefreshTokenModel {
+  userId: string;
+  save: () => Promise<string>;
+}
 type IRefreshWhereClause = {
   expiresAt: {
     gt: Date;
@@ -8,15 +12,19 @@ type IRefreshWhereClause = {
   userId?: string;
   token?: string;
 };
-class RefreshTokenModel {
-  static create = async (userId: string) => {
+class RefreshTokenModel implements IRefreshTokenModel {
+  userId: string;
+  constructor(userId: string) {
+    this.userId = userId;
+  }
+ async save() {
     try {
-      const token = uuidv4();
+      const token =generateRefreshTokenString();
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // Expires in 7 days
       await prisma.refreshToken.create({
         data: {
           token,
-          userId,
+          userId: this.userId,
           expiresAt,
         },
       });
@@ -27,10 +35,10 @@ class RefreshTokenModel {
     }
   };
 
-  static expireActiveTokens = async (
+  static async expireActiveTokens (
     userId: string | null = null,
     token: string | null = null
-  ) => {
+  ){
     try {
       const whereClause: IRefreshWhereClause = {
         expiresAt: {
@@ -55,7 +63,7 @@ class RefreshTokenModel {
     }
   };
 
-  static findByToken = async (token) => {
+  static async findByToken(token: string): Promise<IRefreshToken|null> {
     try {
       const activeToken = await prisma.refreshToken.findUnique({
         where: {

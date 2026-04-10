@@ -5,3 +5,10 @@ export interface IRefreshToken {
     expiresAt: Date;
     createdAt: Date;
 }
+
+export interface IUser {
+    id: string;
+    name: string;
+    email: string;
+    password: string;
+}
