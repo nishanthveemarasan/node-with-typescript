@@ -3,11 +3,9 @@ import { env } from "prisma/config";
 import bcrypt from "bcryptjs";
 import RefreshTokenModel from "../models/refreshTokenModel.ts";
 import { v4 as uuidv4 } from "uuid";
-type IUser = {
-    userId: string;
-    email: string;
-}
-export const generateAccessToken = (user: IUser): string => {
+import type{ IUserJWT } from "../types/models.ts";
+
+export const generateAccessToken = (user: IUserJWT): string => {
     const token = jwt.sign(user, env("JWT_SECRET"), { expiresIn: "1h" });
     return token;
 }  
@@ -37,4 +35,14 @@ export const generateRefreshTokenString = (): string => {
 export const verifyPassword = async(password: string, hashPassword: string): Promise<boolean> => {
     const isPasswordValid: boolean = await bcrypt.compare(password, hashPassword);
     return isPasswordValid;
+}
+
+export const verifyAccessToken = (token: string): IUserJWT => {
+    try{
+        const decoded  = jwt.verify(token, env("JWT_SECRET")) as IUserJWT;
+        return decoded;
+    }catch(error){
+        console.error("Error verifying access token:", error);
+        throw new Error("Invalid token");
+    }
 }

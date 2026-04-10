@@ -24,11 +24,13 @@
     "allowImportingTsExtensions": true,
     "moduleResolution": "NodeNext",
     "target": "ES2022",        // or higher
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "typeRoots": ["./node_modules/@types", "./src/types"]
     // "module": "ESNext",
     // "moduleResolution": "node",
     // "target": "ES2023",
     // "strict": true,
     // "ignoreDeprecations": "6.0"
-  }
+  },
+  "include": ["src/**/*"]
 }

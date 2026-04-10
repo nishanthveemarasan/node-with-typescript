@@ -13,6 +13,20 @@ export interface IUser {
     password: string;
 }
 
+export interface IUserJWT {
+    userId: string;
+    email: string;
+}
+
+export interface IProductUpdateData{
+    title: string;
+    price: number;
+    description: string;
+    imageUrl?: string | null;
+}
+
 export interface customError extends Error {
     status?: number;
 }
+
+
