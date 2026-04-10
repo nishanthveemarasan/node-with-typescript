@@ -1,6 +1,6 @@
 import prisma from "../utils/prisma-client.ts";
 import { generateRefreshTokenString } from "../utils/auth-helper.ts";
-import { IRefreshToken } from "../types/models.ts";
+import type { IRefreshToken } from "../types/models.ts";
 interface IRefreshTokenModel {
   userId: string;
   save: () => Promise<string>;

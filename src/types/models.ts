@@ -12,3 +12,7 @@ export interface IUser {
     email: string;
     password: string;
 }
+
+export interface customError extends Error {
+    status?: number;
+}
