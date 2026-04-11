@@ -1,6 +1,7 @@
 import type{ NextFunction, Request, Response } from "express";
 import type{ customError } from "../types/models.ts";
 import OrderModel from "../models/orderModel.ts";
+import StripeService from "../utils/stripe.ts";
 
 class OrderController {
     static async addToOrder(req: Request, res: Response, next: NextFunction){
@@ -81,5 +82,24 @@ class OrderController {
             next(error);
         }
     }
+
+    static async getPaymentLink(req: Request, res: Response, next: NextFunction){
+        try{
+            const {id:orderId} = req.params;
+            const {userId} = req.user;
+            const paymentUrl = await StripeService.generatePaymentLink(userId,orderId as string);
+            res.status(200).json({ 
+                message: `Payment link generated successfully`,
+                paymentLink: paymentUrl
+            });
+            
+        }catch(err){
+            console.log(err);
+            const error: customError = new Error("Failed to get payment link");
+            error.status = 500;
+            next(error);
+        }
+    }
+
 }
 export default OrderController;

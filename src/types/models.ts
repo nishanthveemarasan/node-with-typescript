@@ -29,4 +29,30 @@ export interface customError extends Error {
     status?: number;
 }
 
+export interface LineItem {
+    price_data: {
+      currency: string;
+      product_data: {
+        name: string;
+        description: string;
+      };
+      tax_behavior: "exclusive" | "inclusive" | "unspecified";
+      unit_amount: number;
+    };
+    quantity: number;
+  }
+  
+export interface StripeData {
+    line_items: LineItem[];
+    payment_intent_data: {
+      metadata: {
+        userId: string;
+        orderId: string;
+      };
+    };
+    mode: "payment" | "setup" | "subscription";
+    success_url: string;
+    cancel_url: string;
+  }
+
 

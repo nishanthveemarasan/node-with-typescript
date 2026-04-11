@@ -1,3 +1,4 @@
+import { OrderTrackStatus } from "../../generated/prisma/enums.ts";
 import prisma from "../utils/prisma-client.ts";
 
 class OrderModel {
@@ -130,7 +131,7 @@ class OrderModel {
                     items: {
                         include: {
                             product: {
-                                include: { file: true } // Includes the product image/file
+                                include: { file: true } 
                             }
                         }
                     }
@@ -225,6 +226,38 @@ class OrderModel {
         }catch(err){
             console.log(err);
             throw new Error("Failed to delete order");
+        }
+    }
+
+    static updatePaymentStatus = async (userId: string, orderId: string, status: OrderTrackStatus) => {
+        console.log("Updating payment status for orderId:", orderId, "to status:", status);
+        try{
+            const result = await prisma.$transaction(async (prisma) => {
+                const order = await prisma.order.findFirst({
+                    where: {
+                        id: orderId,
+                        userId: userId,
+                    },
+                });
+                if (!order) {
+                    throw new Error("Order not found");
+                }
+               await prisma.order.update({
+                    where: { id: orderId },
+                    data: { currentStatus: status },
+                });
+
+                await prisma.orderStatus.create({
+                    data: {
+                        orderId: orderId,
+                        status: status,
+                    },
+                });
+            });
+            return true;
+        }catch(err){
+            console.log(err);
+            throw new Error("Failed to update payment status");
         }
     }
 
