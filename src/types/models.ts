@@ -25,6 +25,11 @@ export interface IProductUpdateData{
     imageUrl?: string | null;
 }
 
+export interface IProduct extends IProductUpdateData{
+    id: string;
+    userId: string;
+}
+
 export interface customError extends Error {
     status?: number;
 }
