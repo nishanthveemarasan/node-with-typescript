@@ -1,5 +1,8 @@
 import app from "./app.ts";
+import { initSocket } from "./utils/socket.ts";
 
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
+const server = app.listen(3000);
+const io = initSocket(server);
+io.on('connection', (socket) => {
+  console.log('User connected:');
 });
