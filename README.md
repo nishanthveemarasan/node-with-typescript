@@ -39,5 +39,4 @@ sudo docker-compose exec mongodb mongosh -u root -p secret
 Mongo Express provides a web-based interface to view and manage your MongoDB data.
 
 - **Open in browser:** [http://localhost:8082](http://localhost:8082)  
-- **Login credentials (Mongo Express UI):**
 
